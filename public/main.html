@@ -78,23 +78,20 @@
         </main>
     </div>
 
-    <!-- Active Call Overlay -->
-    <div id="call-overlay" class="hidden"
-        style="position: fixed; inset:0; background: rgba(0,0,0,0.95); z-index: 300; flex-direction: column; align-items: center; justify-content: center;">
-        <h2 id="call-status-text" style="color: white; margin-bottom: 20px;">In Call</h2>
-        <div id="remote-video-container"
-            style="width: 80%; height: 60%; background: #111; margin-bottom: 20px; border-radius: 16px; display: flex; align-items: center; justify-content: center; position: relative;">
-            <video id="remote-video" autoplay playsinline
-                style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;"></video>
-            <video id="local-video" autoplay playsinline muted
-                style="position: absolute; bottom: 20px; right: 20px; width: 160px; height: 120px; object-fit: cover; border-radius: 12px; border: 2px solid var(--primary); background: #000;"></video>
+    <!-- Active Call Overlay (Floating Card by default) -->
+    <div id="call-overlay" class="hidden">
+        <h2 id="call-status-text">In Call</h2>
+        <div id="remote-video-container">
+            <video id="remote-video" autoplay playsinline></video>
+            <video id="local-video" autoplay playsinline muted></video>
         </div>
 
-        <div class="call-controls" style="display: flex; gap: 20px;">
+        <div class="call-controls">
             <button id="btn-mute" onclick="toggleMute()" class="call-btn">Mute Mic</button>
             <button id="btn-deafen" onclick="toggleDeafen()" class="call-btn">Deafen</button>
             <button id="btn-cam" onclick="toggleCam()" class="call-btn">Cam</button>
             <button id="btn-share" onclick="toggleScreenShare()" class="call-btn">Share</button>
+            <button id="btn-fullscreen" onclick="toggleFullScreen()" class="call-btn">Fullscreen</button>
             <button onclick="endCall()" class="call-btn"
                 style="background: var(--danger); border-color: var(--danger); color: white;">End</button>
         </div>
