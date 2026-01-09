@@ -280,7 +280,41 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
+
+    // --- Call Signaling ---
+    socket.on('callUser', (data) => {
+        io.to(data.userToCall).emit('callUser', {
+            from: data.from,
+            username: data.username,
+            profilePic: data.profilePic
+        });
+    });
+
+    socket.on('answerCall', (data) => {
+        io.to(data.to).emit('callAccepted', data.signal);
+    });
+
+    socket.on('rejectCall', (data) => {
+        io.to(data.to).emit('callRejected');
+    });
+
+    socket.on('offer', (data) => {
+        io.to(data.to).emit('offer', { signal: data.signal, from: data.from });
+    });
+
+    socket.on('answer', (data) => {
+        io.to(data.to).emit('answer', { signal: data.signal });
+    });
+
+    socket.on('ice-candidate', (data) => {
+        io.to(data.to).emit('ice-candidate', data.candidate);
+    });
+
+    socket.on('endCall', (data) => {
+        io.to(data.to).emit('callEnded');
+    });
 });
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
