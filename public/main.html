@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberNet</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile-section">
+                <img id="profile-pic" class="profile-pic" src="" alt="PFP">
+                <h3 id="profile-username">User</h3>
+                <p id="profile-bio" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">Bio...
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button onclick="toggleSettings()"
+                        style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.1);">Settings</button>
+                    <button onclick="logout()"
+                        style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: rgba(255,59,48,0.2); color: #ff3b30;">Log
+                        Out</button>
+                </div>
+            </div>
+
+            <div id="notifications-area"
+                style="background: rgba(255,59,48,0.1); padding: 10px; border-radius: 12px; margin-bottom: 15px; display: none;">
+                <h4
+                    style="font-size: 0.8rem; color: var(--danger-color); margin-bottom: 5px; text-transform: uppercase;">
+                    Incoming Requests</h4>
+                <div id="requests-list"></div>
+            </div>
+
+            <div class="search-section" style="margin-bottom: 1rem;">
+                <input type="text" id="user-search" placeholder="Search users..." oninput="searchUsers()"
+                    style="margin-bottom: 5px;">
+                <div id="search-results" style="max-height: 150px; overflow-y: auto;"></div>
+            </div>
+
+            <h4
+                style="color: var(--text-secondary); margin-bottom: 10px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">
+                Friends</h4>
+            <div id="friends-list" style="flex: 1; overflow-y: auto;">
+                <!-- Friend items -->
+            </div>
+        </aside>
+
+        <!-- Chat Area -->
+        <main class="chat-area" id="chat-dropzone">
+            <div class="drag-overlay">
+                Drop Files to Upload
+            </div>
+
+            <div class="chat-header">
+                <h2 id="current-chat-user" style="margin:0;">Select a user to chat</h2>
+                <div id="header-actions" style="margin-left: auto; display: none;">
+                    <button onclick="startCall()"
+                        style="background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer;">Call</button>
+                </div>
+            </div>
+
+            <div class="messages" id="messages-container">
+                <!-- Messages go here -->
+            </div>
+
+            <div class="chat-footer">
+                <button onclick="document.getElementById('media-input').click()"
+                    style="width: 40px; height: 40px; border-radius: 50%; padding:0; display:flex; align-items:center; justify-content:center; font-size: 1.5rem;">+</button>
+                <input type="text" id="message-input" placeholder="Type a message..."
+                    style="margin:0; border-radius: 20px;">
+                <input type="file" id="media-input" style="display: none;" multiple>
+                <!-- Allow multiple eventually, currently single via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Active Call Overlay (Floating Card by default) -->
+    <div id="call-overlay" class="hidden">
+        <h2 id="call-status-text">In Call</h2>
+        <div id="remote-video-container">
+            <video id="remote-video" autoplay playsinline></video>
+            <video id="local-video" autoplay playsinline muted></video>
+        </div>
+
+        <div class="call-controls">
+            <button id="btn-mute" onclick="toggleMute()" class="call-btn">Mute Mic</button>
+            <button id="btn-deafen" onclick="toggleDeafen()" class="call-btn">Deafen</button>
+            <button id="btn-cam" onclick="toggleCam()" class="call-btn">Cam</button>
+            <button id="btn-share" onclick="toggleScreenShare()" class="call-btn">Share</button>
+            <button id="btn-fullscreen" onclick="toggleFullScreen()" class="call-btn">Fullscreen</button>
+            <button onclick="endCall()" class="call-btn"
+                style="background: var(--danger); border-color: var(--danger); color: white;">End</button>
+        </div>
+    </div>
+
+    <!-- Incoming Call Modal -->
+    <div id="incoming-call-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 400; justify-content: center; align-items: center; flex-direction: column;">
+        <div
+            style="background: rgba(20, 30, 25, 0.95); padding: 50px; border-radius: 30px; border: 1px solid var(--primary); text-align: center; box-shadow: 0 0 80px rgba(0, 255, 136, 0.3); animation: floatIn 0.5s; width: 400px;">
+            <img id="incoming-pfp" src=""
+                style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--primary); margin-bottom: 25px; box-shadow: 0 0 30px rgba(0, 255, 136, 0.4); object-fit: cover;">
+            <h2 id="incoming-username"
+                style="margin-bottom: 10px; font-size: 2.2rem; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Username</h2>
+            <p
+                style="color: var(--text-muted); margin-bottom: 40px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px;">
+                Incoming Call...</p>
+            <div style="display: flex; gap: 20px; justify-content: center;">
+                <button onclick="answerCall()"
+                    style="background: var(--success); color: black; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.3s; box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);">ACCEPT</button>
+                <button onclick="rejectCall()"
+                    style="background: var(--danger); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: 0.3s; box-shadow: 0 0 20px rgba(255, 0, 76, 0.4);">DECLINE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 200; justify-content: center; align-items: center;">
+        <div class="auth-box">
+            <div style="text-align: right; margin-bottom: -20px;"><span onclick="toggleSettings()"
+                    style="cursor: pointer; font-size: 1.5rem;">&times;</span></div>
+            <h2>Edit Profile</h2>
+            <form id="settings-form">
+                <input type="text" id="set-username" placeholder="New Username">
+                <input type="text" id="set-bio" placeholder="New Bio">
+
+                <label
+                    style="display: block; text-align: left; margin-bottom: 5px; font-size: 0.8rem; color: #aaa;">Status:</label>
+                <select id="set-status"
+                    style="width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px;">
+                    <option value="online">Online</option>
+                    <option value="idle">Idle (AFK)</option>
+                    <option value="dnd">Do Not Disturb</option>
+                </select>
+
+                <div style="text-align: left; margin-bottom: 15px;">
+                    <label style="display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">Input Volume
+                        (Mic)</label>
+                    <input type="range" id="vol-input" min="0" max="100" value="100" style="width: 100%;">
+                </div>
+
+                <div style="text-align: left; margin-bottom: 15px;">
+                    <label style="display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">Output Volume
+                        (Sound)</label>
+                    <input type="range" id="vol-output" min="0" max="100" value="100" style="width: 100%;">
+                </div>
+
+                <label
+                    style="display: block; text-align: left; margin-bottom: 5px; font-size: 0.8rem; color: #aaa;">Profile
+                    Picture:</label>
+                <input type="file" id="set-pfp" accept="image/*">
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/call_logic.js"></script>
+</body>
+
+</html>
